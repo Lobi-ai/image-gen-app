@@ -48,25 +48,136 @@ npm run dev        # 默认监听 http://localhost:3001
 
 ## 部署
 
-### 构建前端
+### 环境要求
+
+- **Node.js 18+**（推荐 20 LTS）
+- 代理服务需要 Node.js 运行时环境
+
+### 方式一：直接运行（最简单）
 
 ```bash
-npm run build       # 输出到 dist/ 目录
-```
+git clone https://github.com/Lobi-ai/image-gen-app.git
+cd image-gen-app
 
-`dist/` 目录为纯静态文件，可部署到任意静态托管服务（Nginx、Vercel、Cloudflare Pages 等）。
+# 构建前端
+npm install
+npm run build
 
-### 部署代理服务器
+# 启动静态文件服务
+npx serve dist -l 3001
 
-代理服务器需单独部署到支持 Node.js 的环境：
-
-```bash
+# 另开终端，启动代理服务
 cd server
 npm install
-npm start           # 监听 PORT 环境变量指定端口，默认 3002
+npm start              # 端口 3002
 ```
 
+### 方式二：Nginx + PM2（推荐生产环境）
+
+适合自有服务器、有域名的场景。
+
+```bash
+# 1. 克隆并构建前端
+git clone https://github.com/Lobi-ai/image-gen-app.git
+cd image-gen-app
+npm install && npm run build
+
+# 2. 部署静态文件到 Nginx
+sudo cp -r dist /var/www/image-gen
+sudo tee /etc/nginx/sites-available/image-gen << 'NGINX'
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        root /var/www/image-gen;
+        index index.html;
+        try_files $uri /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3002;
+    }
+}
+NGINX
+sudo ln -s /etc/nginx/sites-available/image-gen /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+
+# 3. 代理服务用 PM2 守护
+cd server
+npm install
+npm install -g pm2
+pm2 start index.js --name image-gen-proxy
+pm2 save && pm2 startup
+```
+
+### 方式三：Docker
+
+```bash
+# 先构建前端
+npm install && npm run build
+
+# 构建镜像
+cat > Dockerfile << 'DOCKER'
+FROM node:20-alpine
+WORKDIR /app
+COPY server/package*.json ./server/
+RUN cd server && npm install --production
+COPY server/ ./server/
+COPY dist/ ./dist/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD cd /app/server && node index.js
+DOCKER
+
+docker build -t image-gen-app .
+docker run -d -p 80:80 --name image-gen image-gen-app
+```
+
+### 方式四：Docker Compose（Nginx + 代理服务）
+
+```yaml
+# docker-compose.yml
+services:
+  proxy:
+    image: node:20-alpine
+    working_dir: /app/server
+    command: node index.js
+    volumes:
+      - ./server:/app/server
+    ports:
+      - "3002:3002"
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: always
+```
+
+```bash
+npm run build
+docker compose up -d
+```
+
+### 方式五：Vercel / Cloudflare Pages（仅前端）
+
+前端静态文件可直接部署到 Vercel，代理服务仍需自建。
+
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+代理服务需额外部署在 VPS 上，前端设置中将代理地址指向 VPS 的代理服务地址。
+
 ### 环境变量
+
+所有 API Key 均可在应用内设置面板直接配置，无需环境变量。
 
 前端（可选）：
 ```env
@@ -82,8 +193,6 @@ OPENAI_API_KEY=
 GOOGLE_API_KEY=
 DOUBAO_API_KEY=
 ```
-
-所有 API Key 均可在应用内设置面板直接配置，无需环境变量。
 
 ## 项目结构
 
