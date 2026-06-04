@@ -70,47 +70,6 @@ export default function SettingsModal() {
           </div>
 
           <div className="px-6 py-4 space-y-5">
-            {/* 代理模式开关 */}
-            <div className="flex items-center justify-between p-4 bg-white/[0.02] rounded-xl border border-white/5">
-              <div>
-                <p className="text-sm text-white font-medium">🔄 代理模式</p>
-                <p className="text-xs text-white/40 mt-0.5">通过本地代理转发请求，解决 CORS 跨域问题</p>
-              </div>
-              <button
-                onClick={() => setApiSettings({ ...apiSettings, useProxy: !apiSettings.useProxy })}
-                className={`
-                  relative w-11 h-6 rounded-full transition-colors duration-200
-                  ${apiSettings.useProxy ? 'bg-purple-500' : 'bg-white/10'}
-                `}
-              >
-                <motion.div
-                  className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md"
-                  animate={{ left: apiSettings.useProxy ? 'calc(100% - 22px)' : '2px' }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              </button>
-            </div>
-
-            {/* 代理地址 */}
-            {apiSettings.useProxy && (
-              <div className="space-y-1.5 p-4 bg-white/[0.02] rounded-xl border border-white/5">
-                <label className="text-xs text-white/50">代理服务器地址</label>
-                <input
-                  type="text"
-                  value={apiSettings.proxyUrl || ''}
-                  onChange={(e) => setApiSettings({ ...apiSettings, proxyUrl: e.target.value })}
-                  placeholder="http://localhost:3001"
-                  className="
-                    w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5
-                    text-white text-sm outline-none transition-all duration-200
-                    placeholder:text-white/25
-                    focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30
-                  "
-                />
-                <p className="text-xs text-white/25">需要先启动代理服务器：cd server && npm start</p>
-              </div>
-            )}
-
             {/* 安全提示 */}
             <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
               <span className="text-amber-400 text-sm">🔒</span>
