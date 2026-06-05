@@ -162,6 +162,7 @@ export async function generateImages(
 
   try {
     let response;
+    const proxyBase = settings.useProxy ? (settings.proxyUrl || '') : '';
     if (isOpenAIImageEdit) {
       // OpenAI 图生图使用 multipart/form-data，base64 转 Blob 构建 FormData
       const formData = new FormData();
@@ -171,10 +172,10 @@ export async function generateImages(
       if (dimensions) formData.append('size', dimensions);
       if (req.n) formData.append('n', String(req.n));
 
-      if (settings.useProxy && settings.proxyUrl) {
-        // 通过代理：把 image 再转 base64，json 传给代理，代理重建 FormData
+      if (settings.useProxy) {
+        // 通过代理转发（proxyUrl 为空则用相对路径，适配生产环境 Nginx 同域代理）
         response = await axios.post(
-          `${settings.proxyUrl}/api/proxy`,
+          `${proxyBase}/api/proxy`,
           {
             url: endpoint,
             method: 'POST',
@@ -195,9 +196,9 @@ export async function generateImages(
           timeout: 600000,
         });
       }
-    } else if (settings.useProxy && settings.proxyUrl) {
+    } else if (settings.useProxy) {
       response = await axios.post(
-        `${settings.proxyUrl}/api/proxy`,
+        `${proxyBase}/api/proxy`,
         { url: endpoint, method: 'POST', headers, body },
         { headers: { 'Content-Type': 'application/json' }, timeout: 600000 }
       );

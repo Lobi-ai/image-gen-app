@@ -70,6 +70,27 @@ export default function SettingsModal() {
           </div>
 
           <div className="px-6 py-4 space-y-5">
+            {/* 代理地址 */}
+            <div className="space-y-1.5 p-4 bg-white/[0.02] rounded-xl border border-white/5">
+              <label className="text-xs text-white/50">代理服务器地址</label>
+              <input
+                type="text"
+                value={apiSettings.proxyUrl || ''}
+                onChange={(e) => setApiSettings({ ...apiSettings, proxyUrl: e.target.value })}
+                placeholder="http://localhost:3002"
+                className="
+                  w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5
+                  text-white text-sm outline-none transition-all duration-200
+                  placeholder:text-white/25
+                  focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30
+                "
+              />
+              <p className="text-xs text-white/25">
+                本地开发：http://localhost:3002<br/>
+                Nginx 部署：留空（走同域 /api/proxy）
+              </p>
+            </div>
+
             {/* 安全提示 */}
             <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
               <span className="text-amber-400 text-sm">🔒</span>

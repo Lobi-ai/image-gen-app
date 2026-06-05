@@ -111,6 +111,8 @@ pm2 start index.js --name image-gen-proxy
 pm2 save && pm2 startup
 ```
 
+> **重要**：部署完成后，打开网页进入设置（⚙️），将**代理服务器地址**清空留空。这样前端走相对路径 `/api/proxy`，Nginx 会自动转发到代理服务，无需跨域。
+
 ### 方式三：Docker
 
 ```bash
