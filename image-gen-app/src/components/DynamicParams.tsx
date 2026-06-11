@@ -1,4 +1,5 @@
-﻿import { motion, AnimatePresence } from 'framer-motion';
+﻿import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { ASPECT_RATIOS } from '../constants/models';
 import type { AspectRatio } from '../types';
@@ -14,6 +15,16 @@ export default function DynamicParams() {
   } = useStore();
 
   const model = getCurrentModel();
+
+  // 切换模型时，如果当前分辨率不在新模型选项中则自动选第一个
+  useEffect(() => {
+    if (model.supports.resolution && model.supports.resolutionOptions) {
+      const opts = model.supports.resolutionOptions;
+      if (!opts.some((o) => o.value === resolution)) {
+        setResolution(opts[0].value);
+      }
+    }
+  }, [model.id, model.supports.resolution, model.supports.resolutionOptions, resolution, setResolution]);
 
   return (
     <AnimatePresence mode="wait">

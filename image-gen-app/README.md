@@ -97,6 +97,10 @@ server {
 
     location /api/ {
         proxy_pass http://127.0.0.1:3002;
+        proxy_read_timeout 600s;       # AI 生图需要较长时间
+        proxy_send_timeout 600s;
+        proxy_connect_timeout 30s;
+        proxy_buffering off;           # 禁用缓冲，避免超时空响应
     }
 }
 NGINX
