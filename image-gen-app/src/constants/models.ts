@@ -1,4 +1,4 @@
-﻿import type { ModelInfo, AspectRatio, ResolutionOption } from '../types';
+﻿import type { ModelInfo, AspectRatio, ResolutionOption, SavedBaseUrl } from '../types';
 
 // ==================== 宽高比选项 ====================
 
@@ -19,6 +19,10 @@ export const OPENAI_RESOLUTIONS: ResolutionOption[] = [
   { label: '1536x1536 (1.5K)', value: '1536x1536', dimensions: '1536x1536' },
   { label: '1792x1024 (16:9宽幅)', value: '1792x1024', dimensions: '1792x1024' },
   { label: '1024x1792 (9:16竖幅)', value: '1024x1792', dimensions: '1024x1792' },
+  { label: '2048x2048 (2K方形)', value: '2048x2048', dimensions: '2048x2048' },
+  { label: '3840x2160 (4K横屏)', value: '3840x2160', dimensions: '3840x2160' },
+  { label: '2160x3840 (4K竖屏)', value: '2160x3840', dimensions: '2160x3840' },
+  { label: '3840x3840 (4K方形)', value: '3840x3840', dimensions: '3840x3840' },
 ];
 
 export const GEMINI_3PRO_RESOLUTIONS: ResolutionOption[] = [
@@ -131,14 +135,23 @@ export const DEFAULT_API_SETTINGS = {
   openai: {
     apiKey: '',
     baseUrl: 'https://api.openai.com/v1',
+    savedBaseUrls: [
+      { name: '灵知', url: 'https://api.aiwork123.com/llm/lingzhi/v1' },
+    ] as SavedBaseUrl[],
   },
   google: {
     apiKey: '',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    savedBaseUrls: [
+      { name: '灵知', url: 'https://api.aiwork123.com/llm/lingzhi/v1beta' },
+    ] as SavedBaseUrl[],
   },
   doubao: {
     apiKey: '',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    savedBaseUrls: [
+      { name: '灵知', url: 'https://api.aiwork123.com/llm/volc/v1' },
+    ] as SavedBaseUrl[],
   },
   useProxy: true,
   proxyUrl: 'http://localhost:3002',

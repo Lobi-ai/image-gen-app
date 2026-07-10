@@ -89,6 +89,8 @@ server {
     listen 80;
     server_name your-domain.com;
 
+    client_max_body_size 50m;          # 允许最大 50MB 请求体（图生图 base64 较大）
+
     location / {
         root /var/www/image-gen;
         index index.html;

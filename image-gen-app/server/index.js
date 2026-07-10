@@ -15,7 +15,7 @@ import multer from 'multer';
 import axios from 'axios';
 
 const app = express();
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ limits: { fileSize: 50 * 1024 * 1024 } });
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));

@@ -22,9 +22,9 @@ export function validateImageFile(file: File): string | null {
     return '仅支持 JPG、PNG、WebP 格式';
   }
 
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 50 * 1024 * 1024; // 50MB
   if (file.size > maxSize) {
-    return '文件大小不能超过 10MB';
+    return '文件大小不能超过 50MB';
   }
 
   return null;

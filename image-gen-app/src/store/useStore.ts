@@ -1,8 +1,37 @@
 ﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppState, HistoryRecord, GeneratedImage, GenerateRequest } from '../types';
+import type { AppState, HistoryRecord, GeneratedImage, GenerateRequest, VendorConfig } from '../types';
 import { MODELS, DEFAULT_API_SETTINGS } from '../constants/models';
 import { saveHistory, loadHistory, clearHistory as clearHistoryDB, deleteHistoryRecords } from '../services/storage';
+
+function migrateSavedBaseUrls(config: Partial<VendorConfig>): { name: string; url: string }[] {
+  if (!config.savedBaseUrls || config.savedBaseUrls.length === 0) return [];
+  // 兼容旧版 string[] 格式，迁移到 { name, url }[]
+  return config.savedBaseUrls.map((item: unknown) => {
+    if (typeof item === 'string') {
+      try { return { name: new URL(item).hostname, url: item }; }
+      catch { return { name: item, url: item }; }
+    }
+    return item as { name: string; url: string };
+  });
+}
+
+function mergeVendorConfig(defaults: { apiKey: string; baseUrl: string; savedBaseUrls: { name: string; url: string }[] }, persisted: Partial<VendorConfig> | undefined) {
+  const persistedUrls = migrateSavedBaseUrls(persisted || {});
+  const defaultUrls = defaults.savedBaseUrls || [];
+  // 合并：默认优先，用户添加的跟在后面，按 url 去重
+  const mergedUrls = [...defaultUrls];
+  for (const u of persistedUrls) {
+    if (!mergedUrls.some((d) => d.url === u.url)) {
+      mergedUrls.push(u);
+    }
+  }
+  return {
+    apiKey: (persisted?.apiKey as string) ?? defaults.apiKey,
+    baseUrl: (persisted?.baseUrl as string) ?? defaults.baseUrl,
+    savedBaseUrls: mergedUrls,
+  };
+}
 
 export const useStore = create<AppState>()(
   persist(
@@ -124,18 +153,9 @@ export const useStore = create<AppState>()(
         apiSettings: {
           ...DEFAULT_API_SETTINGS,
           ...((persisted as Partial<AppState>)?.apiSettings || {}),
-          openai: {
-            ...DEFAULT_API_SETTINGS.openai,
-            ...((persisted as Partial<AppState>)?.apiSettings?.openai || {}),
-          },
-          google: {
-            ...DEFAULT_API_SETTINGS.google,
-            ...((persisted as Partial<AppState>)?.apiSettings?.google || {}),
-          },
-          doubao: {
-            ...DEFAULT_API_SETTINGS.doubao,
-            ...((persisted as Partial<AppState>)?.apiSettings?.doubao || {}),
-          },
+          openai: mergeVendorConfig(DEFAULT_API_SETTINGS.openai, (persisted as Partial<AppState>)?.apiSettings?.openai),
+          google: mergeVendorConfig(DEFAULT_API_SETTINGS.google, (persisted as Partial<AppState>)?.apiSettings?.google),
+          doubao: mergeVendorConfig(DEFAULT_API_SETTINGS.doubao, (persisted as Partial<AppState>)?.apiSettings?.doubao),
         },
       }),
     }

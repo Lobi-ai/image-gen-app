@@ -26,7 +26,7 @@ export default function ImageUpload() {
     onDrop,
     accept: { 'image/jpeg': ['.jpg', '.jpeg'], 'image/png': ['.png'], 'image/webp': ['.webp'] },
     maxFiles: 1,
-    maxSize: 10 * 1024 * 1024,
+    maxSize: 50 * 1024 * 1024,
   });
 
   return (
@@ -49,7 +49,7 @@ export default function ImageUpload() {
             <p className="text-sm text-white/60">
               {isDragActive ? '释放以上传图片' : '点击或拖拽上传参考图片'}
             </p>
-            <p className="text-xs text-white/30">JPG / PNG / WebP · 最大 10MB</p>
+            <p className="text-xs text-white/30">JPG / PNG / WebP · 最大 50MB</p>
           </div>
         </div>
       ) : (
