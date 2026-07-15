@@ -85,11 +85,23 @@ npm install && npm run build
 # 2. 部署静态文件到 Nginx
 sudo cp -r dist /var/www/image-gen
 sudo tee /etc/nginx/sites-available/image-gen << 'NGINX'
+# HTTP → HTTPS 重定向
 server {
     listen 80;
     server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
 
-    client_max_body_size 50m;          # 允许最大 50MB 请求体（图生图 base64 较大）
+# HTTPS
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    # SSL 证书（使用你的证书路径）
+    ssl_certificate     /etc/nginx/ssl/your-domain.crt;
+    ssl_certificate_key /etc/nginx/ssl/your-domain.key;
+
+    client_max_body_size 50m;          # 允许最大 50MB 请求体
 
     location / {
         root /var/www/image-gen;
