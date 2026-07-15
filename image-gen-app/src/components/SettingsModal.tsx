@@ -131,8 +131,8 @@ export default function SettingsModal() {
                 "
               />
               <p className="text-xs text-white/25">
-                本地开发：http://localhost:3002<br/>
-                Nginx 部署：留空（走同域 /api/proxy）
+                留空使用相对路径（生产环境推荐）<br/>
+                本地开发填写：http://localhost:3002
               </p>
             </div>
             )}

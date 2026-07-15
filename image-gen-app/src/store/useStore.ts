@@ -146,18 +146,25 @@ export const useStore = create<AppState>()(
         apiSettings: state.apiSettings,
         // 历史记录不持久化，base64 图片数据太大会撑爆 localStorage
       }),
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as Partial<AppState>),
-        // 确保 apiSettings 中新字段有默认值
-        apiSettings: {
-          ...DEFAULT_API_SETTINGS,
-          ...((persisted as Partial<AppState>)?.apiSettings || {}),
-          openai: mergeVendorConfig(DEFAULT_API_SETTINGS.openai, (persisted as Partial<AppState>)?.apiSettings?.openai),
-          google: mergeVendorConfig(DEFAULT_API_SETTINGS.google, (persisted as Partial<AppState>)?.apiSettings?.google),
-          doubao: mergeVendorConfig(DEFAULT_API_SETTINGS.doubao, (persisted as Partial<AppState>)?.apiSettings?.doubao),
-        },
-      }),
+      merge: (persisted, current) => {
+        const oldSettings = (persisted as Partial<AppState>)?.apiSettings;
+        // 迁移：旧版 localhost 代理地址清理，避免 HTTPS 页面报错
+        const proxyUrl = oldSettings?.proxyUrl;
+        const migratedProxyUrl = (proxyUrl === 'http://localhost:3001' || proxyUrl === 'http://localhost:3002')
+          ? '' : (proxyUrl ?? DEFAULT_API_SETTINGS.proxyUrl);
+        return {
+          ...current,
+          ...(persisted as Partial<AppState>),
+          apiSettings: {
+            ...DEFAULT_API_SETTINGS,
+            ...(oldSettings || {}),
+            proxyUrl: migratedProxyUrl,
+            openai: mergeVendorConfig(DEFAULT_API_SETTINGS.openai, oldSettings?.openai),
+            google: mergeVendorConfig(DEFAULT_API_SETTINGS.google, oldSettings?.google),
+            doubao: mergeVendorConfig(DEFAULT_API_SETTINGS.doubao, oldSettings?.doubao),
+          },
+        };
+      },
     }
   )
 );

@@ -154,7 +154,7 @@ export const DEFAULT_API_SETTINGS = {
     ] as SavedBaseUrl[],
   },
   useProxy: true,
-  proxyUrl: 'http://localhost:3002',
+  proxyUrl: '',       // 留空走相对路径，生产环境开箱即用
 };
 
 // ==================== 厂商标签颜色 ====================
