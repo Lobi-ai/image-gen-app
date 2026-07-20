@@ -4,32 +4,26 @@ import type { AppState, HistoryRecord, GeneratedImage, GenerateRequest, VendorCo
 import { MODELS, DEFAULT_API_SETTINGS } from '../constants/models';
 import { saveHistory, loadHistory, clearHistory as clearHistoryDB, deleteHistoryRecords } from '../services/storage';
 
-function migrateSavedBaseUrls(config: Partial<VendorConfig>): { name: string; url: string }[] {
-  if (!config.savedBaseUrls || config.savedBaseUrls.length === 0) return [];
-  // 兼容旧版 string[] 格式，迁移到 { name, url }[]
-  return config.savedBaseUrls.map((item: unknown) => {
-    if (typeof item === 'string') {
-      try { return { name: new URL(item).hostname, url: item }; }
-      catch { return { name: item, url: item }; }
-    }
-    return item as { name: string; url: string };
-  });
-}
-
-function mergeVendorConfig(defaults: { apiKey: string; baseUrl: string; savedBaseUrls: { name: string; url: string }[] }, persisted: Partial<VendorConfig> | undefined) {
-  const persistedUrls = migrateSavedBaseUrls(persisted || {});
-  const defaultUrls = defaults.savedBaseUrls || [];
-  // 合并：默认优先，用户添加的跟在后面，按 url 去重
-  const mergedUrls = [...defaultUrls];
-  for (const u of persistedUrls) {
-    if (!mergedUrls.some((d) => d.url === u.url)) {
-      mergedUrls.push(u);
+function mergeVendorConfig(defaults: { apiKey: string; baseUrl: string; savedCredentials: { name: string; baseUrl: string; apiKey: string }[] }, persisted: Partial<VendorConfig> | undefined) {
+  // 迁移旧 savedBaseUrls → 新 savedCredentials
+  const oldUrls = (persisted as Record<string, unknown>)?.savedBaseUrls as Array<{ name: string; url: string }> | undefined;
+  const migratedFromOld = (oldUrls || []).map((u) => ({ name: u.name, baseUrl: u.url, apiKey: '' }));
+  const newCreds = persisted?.savedCredentials || [];
+  const allCreds = [...migratedFromOld, ...newCreds];
+  // 去重
+  const seen = new Set<string>();
+  const merged = [...defaults.savedCredentials];
+  for (const c of merged) seen.add(c.baseUrl);
+  for (const c of allCreds) {
+    if (!seen.has(c.baseUrl)) {
+      seen.add(c.baseUrl);
+      merged.push(c);
     }
   }
   return {
     apiKey: (persisted?.apiKey as string) ?? defaults.apiKey,
     baseUrl: (persisted?.baseUrl as string) ?? defaults.baseUrl,
-    savedBaseUrls: mergedUrls,
+    savedCredentials: merged,
   };
 }
 

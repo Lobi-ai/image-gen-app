@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { DEFAULT_API_SETTINGS } from '../constants/models';
@@ -57,28 +57,37 @@ export default function SettingsModal() {
 
   const handleConfirmSave = () => {
     if (!savingVendor || !saveName.trim()) return;
-    const url = apiSettings[savingVendor].baseUrl;
-    const urls = apiSettings[savingVendor].savedBaseUrls || [];
-    if (urls.some((u) => u.url === url)) {
+    const v = savingVendor;
+    const baseUrl = apiSettings[v].baseUrl;
+    const apiKey = apiSettings[v].apiKey;
+    const creds = apiSettings[v].savedCredentials || [];
+    if (creds.some((c) => c.baseUrl === baseUrl)) {
       setSavingVendor(null);
       return;
     }
     setApiSettings({
       ...apiSettings,
-      [savingVendor]: {
-        ...apiSettings[savingVendor],
-        savedBaseUrls: [...urls, { name: saveName.trim(), url }],
+      [v]: {
+        ...apiSettings[v],
+        savedCredentials: [...creds, { name: saveName.trim(), baseUrl, apiKey }],
       },
     });
     setSavingVendor(null);
     setSaveName('');
   };
 
-  const handleRemoveSavedUrl = (vendor: Vendor, url: string) => {
-    const urls = apiSettings[vendor].savedBaseUrls || [];
+  const handleSelectCredential = (vendor: Vendor, cred: { baseUrl: string; apiKey: string }) => {
     setApiSettings({
       ...apiSettings,
-      [vendor]: { ...apiSettings[vendor], savedBaseUrls: urls.filter((u) => u.url !== url) },
+      [vendor]: { ...apiSettings[vendor], baseUrl: cred.baseUrl, apiKey: cred.apiKey },
+    });
+  };
+
+  const handleRemoveCredential = (vendor: Vendor, baseUrl: string) => {
+    const creds = apiSettings[vendor].savedCredentials || [];
+    setApiSettings({
+      ...apiSettings,
+      [vendor]: { ...apiSettings[vendor], savedCredentials: creds.filter((c) => c.baseUrl !== baseUrl) },
     });
   };
 
@@ -114,7 +123,7 @@ export default function SettingsModal() {
           </div>
 
           <div className="px-6 py-4 space-y-5">
-            {/* 代理地址（仅开发环境显示，生产构建自动隐藏） */}
+            {/* 代理地址 */}
             {import.meta.env.DEV && (
             <div className="space-y-1.5 p-4 bg-white/[0.02] rounded-xl border border-white/5">
               <label className="text-xs text-white/50">代理服务器地址</label>
@@ -123,31 +132,22 @@ export default function SettingsModal() {
                 value={apiSettings.proxyUrl || ''}
                 onChange={(e) => setApiSettings({ ...apiSettings, proxyUrl: e.target.value })}
                 placeholder="http://localhost:3002"
-                className="
-                  w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5
-                  text-white text-sm outline-none transition-all duration-200
-                  placeholder:text-white/25
-                  focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30
-                "
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none placeholder:text-white/25 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
               />
-              <p className="text-xs text-white/25">
-                留空使用相对路径（生产环境推荐）<br/>
-                本地开发填写：http://localhost:3002
-              </p>
+              <p className="text-xs text-white/25">留空使用相对路径（生产环境推荐）<br/>本地开发填写：http://localhost:3002</p>
             </div>
             )}
 
             {/* 安全提示 */}
             <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
               <span className="text-amber-400 text-sm">🔒</span>
-              <p className="text-xs text-amber-300/80">
-                API Key 仅存储在您的浏览器本地，不会上传到任何服务器
-              </p>
+              <p className="text-xs text-amber-300/80">API Key 仅存储在您的浏览器本地，不会上传到任何服务器</p>
             </div>
 
             {/* 厂商配置 */}
             {VENDORS.map((vendor) => {
-              const vendorUrls = apiSettings[vendor.key].savedBaseUrls || [];
+              const creds = apiSettings[vendor.key].savedCredentials || [];
+              const currentUrl = apiSettings[vendor.key].baseUrl;
               return (
               <div key={vendor.key} className="space-y-3 p-4 bg-white/[0.02] rounded-xl border border-white/5">
                 <div className="flex items-center gap-2">
@@ -158,81 +158,65 @@ export default function SettingsModal() {
 
                 {/* Base URL */}
                 <div className="space-y-1.5">
-                  <label className="text-xs text-white/50">Base URL（可选）</label>
+                  <label className="text-xs text-white/50">Base URL</label>
                   <div className="flex gap-1.5">
                     <input
                       type="text"
-                      value={apiSettings[vendor.key].baseUrl}
+                      value={currentUrl}
                       onChange={(e) => updateVendorConfig(vendor.key, 'baseUrl', e.target.value)}
                       placeholder={DEFAULT_API_SETTINGS[vendor.key].baseUrl}
-                      className="
-                        flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5
-                        text-white text-sm outline-none transition-all duration-200
-                        placeholder:text-white/25
-                        focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30
-                      "
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none placeholder:text-white/25 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
                     />
-                    {vendorUrls.length > 0 && (
-                      <div className="relative w-28 flex-shrink-0">
-                        <select
-                          value={vendorUrls.some((u) => u.url === apiSettings[vendor.key].baseUrl) ? apiSettings[vendor.key].baseUrl : ''}
-                          onChange={(e) => { if (e.target.value) updateVendorConfig(vendor.key, 'baseUrl', e.target.value); }}
-                          className="
-                            w-full h-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 pr-7
-                            text-white/60 text-xs outline-none transition-all duration-200
-                            focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30
-                            hover:border-white/20 truncate
-                          "
-                        >
-                          <option value="" className="bg-gray-900 text-white/40">选择已保存...</option>
-                          {vendorUrls.map((item) => (
-                            <option key={item.url} value={item.url} className="bg-gray-900 text-white">{item.name}</option>
-                          ))}
-                        </select>
-                        <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none"
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
+                    {creds.length > 0 && (
+                      <select
+                        value={creds.some((c) => c.baseUrl === currentUrl) ? currentUrl : ''}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const cred = creds.find((c) => c.baseUrl === e.target.value);
+                            if (cred) handleSelectCredential(vendor.key, cred);
+                          }
+                        }}
+                        className="w-28 flex-shrink-0 bg-white/5 border border-white/10 rounded-xl px-3 text-white/60 text-xs outline-none focus:border-purple-500/50"
+                      >
+                        <option value="" className="bg-gray-900 text-white/40">选择已保存...</option>
+                        {creds.map((item) => (
+                          <option key={item.baseUrl} value={item.baseUrl} className="bg-gray-900 text-white">
+                            {item.name} {item.apiKey ? '🔑' : ''}
+                          </option>
+                        ))}
+                      </select>
                     )}
                   </div>
-                  {/* Save button / name input */}
+
+                  {/* Save button */}
                   {savingVendor === vendor.key ? (
                     <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={saveName}
-                        onChange={(e) => setSaveName(e.target.value)}
+                      <input type="text" value={saveName} onChange={(e) => setSaveName(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmSave(); if (e.key === 'Escape') setSavingVendor(null); }}
-                        placeholder="输入显示名称..."
-                        autoFocus
-                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5
-                          text-white text-xs outline-none
-                          focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
-                      />
+                        placeholder="输入显示名称..." autoFocus
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none focus:border-purple-500/50" />
                       <button onClick={handleConfirmSave} className="px-2.5 py-1.5 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 text-xs rounded-lg transition-colors whitespace-nowrap">确认</button>
                       <button onClick={() => setSavingVendor(null)} className="px-2 py-1.5 text-white/30 hover:text-white/60 text-xs transition-colors">取消</button>
                     </div>
                   ) : (
                     <button
                       onClick={() => handleStartSave(vendor.key)}
-                      disabled={!apiSettings[vendor.key].baseUrl || vendorUrls.some((u) => u.url === apiSettings[vendor.key].baseUrl)}
-                      className="text-xs text-white/30 hover:text-white/60 transition-colors disabled:opacity-20 disabled:cursor-default text-left"
+                      disabled={!currentUrl || creds.some((c) => c.baseUrl === currentUrl)}
+                      className="text-xs text-white/30 hover:text-white/60 transition-colors disabled:opacity-20"
                     >
-                      + 保存到列表
+                      + 保存到列表（含 URL + Key）
                     </button>
                   )}
-                  {vendorUrls.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {vendorUrls.map((item) => (
-                        <span key={item.url} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/[0.04] rounded-md text-xs text-white/40" title={item.url}>
-                          <span className="max-w-[120px] truncate">{item.name}</span>
-                          <button
-                            onClick={() => handleRemoveSavedUrl(vendor.key, item.url)}
-                            className="text-white/15 hover:text-red-400 transition-colors leading-none"
-                          >
-                            ×
-                          </button>
+
+                  {/* 已保存标签 */}
+                  {creds.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {creds.map((item) => (
+                        <span key={item.baseUrl} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/[0.04] rounded-md text-xs text-white/40"
+                          title={`${item.baseUrl} | ${item.apiKey ? 'Key 已保存' : '未保存 Key'}`}>
+                          <span className="max-w-[100px] truncate">{item.name}</span>
+                          <button onClick={() => handleRemoveCredential(vendor.key, item.baseUrl)}
+                            className="text-white/15 hover:text-red-400 transition-colors leading-none">×</button>
                         </span>
                       ))}
                     </div>
@@ -248,19 +232,11 @@ export default function SettingsModal() {
                       value={apiSettings[vendor.key].apiKey}
                       onChange={(e) => updateVendorConfig(vendor.key, 'apiKey', e.target.value)}
                       placeholder="输入 API Key..."
-                      className="
-                        w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pr-10
-                        text-white text-sm outline-none transition-all duration-200
-                        placeholder:text-white/25
-                        focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30
-                      "
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-white text-sm outline-none placeholder:text-white/25 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowKey((prev) => ({ ...prev, [vendor.key]: !prev[vendor.key] }))}
+                    <button type="button" onClick={() => setShowKey((prev) => ({ ...prev, [vendor.key]: !prev[vendor.key] }))}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
-                      title={showKey[vendor.key] ? '隐藏' : '显示'}
-                    >
+                      title={showKey[vendor.key] ? '隐藏' : '显示'}>
                       {showKey[vendor.key] ? (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
@@ -277,12 +253,8 @@ export default function SettingsModal() {
 
                 {/* 测试按钮 */}
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleTest(vendor.key)}
-                    disabled={testing[vendor.key]}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white
-                      rounded-xl text-xs font-medium transition-colors disabled:opacity-50"
-                  >
+                  <button onClick={() => handleTest(vendor.key)} disabled={testing[vendor.key]}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl text-xs font-medium transition-colors disabled:opacity-50">
                     {testing[vendor.key] ? '测试中...' : '🔍 测试连接'}
                   </button>
                   {testResults[vendor.key] && (
@@ -295,25 +267,12 @@ export default function SettingsModal() {
               );
             })}
 
-            {/* 底部操作 */}
+            {/* 底部 */}
             <div className="flex items-center justify-between pt-2 border-t border-white/5">
-              <button
-                onClick={() => {
-                  setApiSettings(DEFAULT_API_SETTINGS);
-                  setTestResults({});
-                }}
-                className="text-xs text-white/40 hover:text-white/70 transition-colors"
-              >
-                重置为默认
-              </button>
-              <button
-                onClick={() => setSettingsOpen(false)}
-                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600
-                  hover:from-purple-500 hover:to-cyan-500 text-white text-sm font-medium
-                  rounded-xl transition-all duration-200"
-              >
-                完成
-              </button>
+              <button onClick={() => { setApiSettings(DEFAULT_API_SETTINGS); setTestResults({}); }}
+                className="text-xs text-white/40 hover:text-white/70 transition-colors">重置为默认</button>
+              <button onClick={() => setSettingsOpen(false)}
+                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white text-sm font-medium rounded-xl transition-all duration-200">完成</button>
             </div>
           </div>
         </motion.div>

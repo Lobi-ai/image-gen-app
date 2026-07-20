@@ -29,15 +29,16 @@ export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
 
 // ==================== API 配置 ====================
 
-export interface SavedBaseUrl {
+export interface SavedCredential {
   name: string;
-  url: string;
+  baseUrl: string;
+  apiKey: string;
 }
 
 export interface VendorConfig {
   apiKey: string;
   baseUrl: string;
-  savedBaseUrls: SavedBaseUrl[];
+  savedCredentials: SavedCredential[];
 }
 
 export interface ApiSettings {

@@ -1,4 +1,4 @@
-﻿import type { ModelInfo, AspectRatio, ResolutionOption, SavedBaseUrl } from '../types';
+﻿import type { ModelInfo, AspectRatio, ResolutionOption, SavedCredential } from '../types';
 
 // ==================== 宽高比选项 ====================
 
@@ -135,23 +135,17 @@ export const DEFAULT_API_SETTINGS = {
   openai: {
     apiKey: '',
     baseUrl: 'https://api.openai.com/v1',
-    savedBaseUrls: [
-      { name: '灵知', url: 'https://api.aiwork123.com/llm/lingzhi/v1' },
-    ] as SavedBaseUrl[],
+    savedCredentials: [] as SavedCredential[],
   },
   google: {
     apiKey: '',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    savedBaseUrls: [
-      { name: '灵知', url: 'https://api.aiwork123.com/llm/lingzhi/v1beta' },
-    ] as SavedBaseUrl[],
+    savedCredentials: [] as SavedCredential[],
   },
   doubao: {
     apiKey: '',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-    savedBaseUrls: [
-      { name: '灵知', url: 'https://api.aiwork123.com/llm/volc/v1' },
-    ] as SavedBaseUrl[],
+    savedCredentials: [] as SavedCredential[],
   },
   useProxy: true,
   proxyUrl: '',       // 留空走相对路径，生产环境开箱即用
